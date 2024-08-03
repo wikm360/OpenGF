@@ -1,0 +1,18 @@
+rules:
+  - name: match by IP
+    action: check
+    type: http
+    ip: "185.128.136.186"
+    host: "None"
+
+  - name: match by host
+    action: check
+    type: http
+    ip: "None"
+    host: "wikm.ir"
+
+  - name: match by both ip and host
+    action: check
+    type: http
+    ip: "185.128.136.186"
+    host: "wikm.ir"
