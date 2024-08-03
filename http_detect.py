@@ -3,6 +3,7 @@ from scapy.all import sniff, IP, TCP, Raw
 import re
 from typing import Dict
 from threading import Thread
+import sys
 
 class HTTPAnalyzer:
     def __init__(self, rule: Dict):
@@ -11,6 +12,8 @@ class HTTPAnalyzer:
 
     def analyze_packet(self, packet):
         if IP in packet and TCP in packet and Raw in packet:
+            src_port = packet[TCP].sport
+            dst_port  = packet[TCP].dport
             src_ip = packet[IP].src
             dst_ip = packet[IP].dst
             payload = bytes(packet[Raw])
@@ -44,11 +47,7 @@ class HTTPAnalyzer:
         return False
 
     def log_traffic(self, src_ip, dst_ip, payload , host , type_check):
-        print(f"HTTP traffic detected by {type_check} :")
-        print(f"Source: {src_ip}")
-        print(f"Destination: {dst_ip}")
-        print(f"Host: {host}")
-        print(f"Payload: {payload[:100]}...")  # show first 100 bytes
+        print(f"HTTP traffic Matched by {type_check} / Source: {src_ip} / Destination: {dst_ip} / Host: {host} / Payload: [ {payload[:100]}  ] ...")
         print("--------------------")
 
 def load_yaml(file_path: str) -> Dict:
@@ -61,19 +60,19 @@ def capture_packets(rule: Dict, interface: str = "eth0"):
     sniff(iface=interface, prn=analyzer.analyze_packet, store=0)
 
 if __name__ == "__main__":
+    # get argomans from cli
+    if len(sys.argv) < 2:
+        print("No rule data provided.")
+    rule_yaml = sys.argv[1]
+    
+    try:
+        rule = yaml.safe_load(rule_yaml)
+    except yaml.YAMLError:
+        print("Failed to decode YAML.")
+
     configs = load_yaml('config.yaml')
-    rules = load_yaml('rules.yaml')
     print("Created By wikm with ❤️ ")
-    print("Version 1.0")
+    print("Version 1.1")
     print("Starting ... ")
     interface = configs['io']['interface']
-    # for rule in rules['rules']:
-    #     capture_packets(rule, interface)
-    threads = []
-    for rule in rules['rules']:
-        thread = Thread(target=capture_packets, args=(rule, interface))
-        threads.append(thread)
-        thread.start()
-    # wait for end all  threads
-    for thread in threads:
-        thread.join()
+    capture_packets(rule, interface)
