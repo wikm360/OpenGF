@@ -71,8 +71,5 @@ if __name__ == "__main__":
         print("Failed to decode YAML.")
 
     configs = load_yaml('config.yaml')
-    print("Created By wikm with ❤️ ")
-    print("Version 1.1")
-    print("Starting ... ")
     interface = configs['io']['interface']
     capture_packets(rule, interface)

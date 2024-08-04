@@ -2,7 +2,7 @@ rules:
   - name: match by IP
     action: check
     type: http
-    ip: "185.128.136.186"
+    ip: "104.21.82.169"
     host: "None"
 
   - name: match by host
@@ -16,3 +16,31 @@ rules:
     type: http
     ip: "185.128.136.186"
     host: "wikm.ir"
+
+  - name: match by ip port 443
+    action: check
+    type: tls
+    ip: "185.15.59.224"
+    sni: "None"
+    port: "443"
+
+  - name: match by ip and all ports
+    action: check
+    type: tls
+    ip: "185.15.59.224"
+    sni: "None"
+    port: all
+
+  - name: match by sni and all ports
+    action: check
+    type: tls
+    ip: "None"
+    sni: "wikm.ir"
+    port: all
+
+  - name: match by sni and ip
+    action: check
+    type: tls
+    ip: "185.15.59.224"
+    sni: "fa.wikipedia.org"
+    port: all
