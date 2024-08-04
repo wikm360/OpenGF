@@ -40,7 +40,7 @@ def main():
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     print("Created By wikm with ❤️ ")
-    print("Version 1.2")
+    print("Version 1.3")
     print("Starting ... ")
     print("Press Ctrl+C to stop the capture")
 
@@ -53,6 +53,8 @@ def main():
             run_rule_detection('http.py', rule)
         elif rule['type'] == 'tls':
             run_rule_detection('TLS.py', rule)
+        elif rule['type'] == 'geosite' :
+            run_rule_detection('GeoSite.py', rule)
         else:
             print(f"Unknown rule type: {rule['type']}")
 

@@ -1,12 +1,12 @@
 from scapy.all import *
-from scapy.all  import IP
+from scapy.all  import IP , TCP
 from scapy.layers.tls.all import TLS
 from scapy.layers.tls.extensions import TLS_Ext_ServerName
 import yaml
 from typing import Dict
 
-def log_traffic(packet , sni , type_check):
-    print(f"TLS traffic Matched by {type_check} / SNI: {sni} / {packet.summary()}  ] ...")
+def log_traffic(packet,sni, src_ip , dst_ip , src_port , dst_port , type_check):
+    print(f"TLS traffic Matched by {type_check} / SNI: {sni} /  {src_ip}:{src_port} > {dst_ip}:{dst_port}  / packet: {packet.summary()}  ] ...")
     print("--------------------")
 
 def load_yaml(file_path: str) -> Dict:
@@ -23,15 +23,17 @@ def packet_callback(packet):
         
         dst_ip = packet[IP].dst
         src_ip = packet[IP].src
+        src_port = packet[TCP].sport
+        dst_port  = packet[TCP].dport
 
-        if rule['ip'] == "all" :
-            log_traffic(packet,sni,"all")
+        if rule['ip'] == "all" : #Just TLS detect
+            log_traffic(packet,sni, src_ip , dst_ip , src_port , dst_port , "all")
         if rule['ip']==dst_ip and rule['sni'] == sni :
-            log_traffic(packet,sni,"ip and sni")
+            log_traffic(packet,sni, src_ip , dst_ip , src_port , dst_port ,"ip and sni")
         elif rule['ip'] == dst_ip :
-            log_traffic(packet,sni,"ip")
+            log_traffic(packet,sni, src_ip , dst_ip , src_port , dst_port ,"ip")
         elif rule['sni'] == sni :
-            log_traffic(packet,sni,"sni")
+            log_traffic(packet,sni, src_ip , dst_ip , src_port , dst_port ,"sni")
         
             #print("Packet details:")
             #packet.show()
@@ -55,9 +57,9 @@ print(f"Filter : {filter_exp}")
 print(f"Starting packet capture on interface {interface}")
 
 if rule['port'] == "all" :
-    sniff(iface=interface, prn=packet_callback)
+    sniff(iface=interface, prn=packet_callback , session=TCPSession)
 elif rule['port'] == "https" :
-    sniff(iface=interface, filter=filter_exp, prn=packet_callback)
+    sniff(iface=interface, filter="tcp port 443", prn=packet_callback , session=TCPSession)
 else :
-    sniff(iface=interface, filter=filter_exp, prn=packet_callback)
+    sniff(iface=interface, filter=filter_exp, prn=packet_callback , session=TCPSession)
 

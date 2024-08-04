@@ -1,4 +1,6 @@
 rules:
+#http
+
   - name: match by IP
     action: check
     type: http
@@ -16,6 +18,8 @@ rules:
     type: http
     ip: "185.128.136.186"
     host: "wikm.ir"
+
+#TLS
 
   - name: match by ip port 443
     action: check
@@ -44,3 +48,17 @@ rules:
     ip: "185.15.59.224"
     sni: "fa.wikipedia.org"
     port: all
+
+  - name: match by sni
+    action: check
+    type: tls
+    ip: "185.128.136.186"
+    sni: "netplusshop.ir"
+    port: all
+
+    #Geosite
+
+  - name: Geosite match
+    action: check
+    type: geosite
+    path: "./GeoSite.txt"
