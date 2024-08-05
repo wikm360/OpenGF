@@ -2,6 +2,7 @@ from scapy.all import sniff, DNS, DNSQR, DNSRR, IP
 import yaml
 import sys
 from typing import Dict
+from telegram import send_to_telegram
 
 def load_yaml(file_path: str) -> Dict:
     with open(file_path, 'r') as file:
@@ -18,16 +19,22 @@ def handle_dns(packet):
                     rr = packet[DNSRR][i]
                     if rr.type == 1:  # A record
                         domains[qname].append(rr.rdata)
-                        print(f"[DNS Response] {qname} -> {rr.rdata} (IPv4)")
+                        mess = f"[DNS Response] {qname} -> {rr.rdata} (IPv4)"
+                        print(mess)
+                        send_to_telegram(mess)
                     elif rr.type == 28:  # AAAA record
                         domains[qname].append(rr.rdata)
-                        print(f"[DNS Response] {qname} -> {rr.rdata} (IPv6)")
+                        mess = f"[DNS Response] {qname} -> {rr.rdata} (IPv6)"
+                        print(mess)
+                        send_to_telegram(mess)
 
 def handle_packet(packet):
     if packet.haslayer(IP):
         for key , value in domains.items() :
             if packet[IP].dst in value:
-                print(f"[Detected] Packet to {packet[IP].dst} from {packet[IP].src}")
+                mess = f"[Detected] Packet to {packet[IP].dst} from {packet[IP].src}"
+                print(mess)
+                send_to_telegram(mess)
 
 def packet_callback(packet):
     if packet.haslayer(DNS):

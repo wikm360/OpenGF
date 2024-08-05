@@ -1,2 +1,6 @@
 io:
   interface: "wlx00117f3abe6a"
+
+telegram:
+  token: "###############################" #your bot token : get from https://t.me/BotFather
+  chatid: "#########" # your chat id : get from https://t.me/chatIDrobot

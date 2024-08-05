@@ -7,7 +7,7 @@ from typing import Dict
 # list for save child procceess
 processes = []
 
-def load_rules(file_path: str) -> Dict:
+def load_rules(file_path):
     with open(file_path, 'r') as file:
         return yaml.safe_load(file)
 
@@ -40,7 +40,7 @@ def main():
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     print("Created By wikm with ❤️ ")
-    print("Version 1.3")
+    print("Version 1.4")
     print("Starting ... ")
     print("Press Ctrl+C to stop the capture")
 
@@ -50,11 +50,13 @@ def main():
     # run each rule with seprate procces
     for rule in rules['rules']:
         if rule['type'] == 'http':
-            run_rule_detection('http.py', rule)
+            run_rule_detection('http_detect.py', rule)
         elif rule['type'] == 'tls':
             run_rule_detection('TLS.py', rule)
         elif rule['type'] == 'geosite' :
             run_rule_detection('GeoSite.py', rule)
+        elif rule['type'] == 'geoip' :
+            run_rule_detection('GeoIP.py', rule)
         else:
             print(f"Unknown rule type: {rule['type']}")
 

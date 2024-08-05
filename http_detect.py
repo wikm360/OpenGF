@@ -4,9 +4,10 @@ import re
 from typing import Dict
 from threading import Thread
 import sys
+from telegram import send_to_telegram
 
 class HTTPAnalyzer:
-    def __init__(self, rule: Dict):
+    def __init__(self, rule):
         self.rule = rule
         self.http_pattern = re.compile(rb'^(GET|POST|PUT|DELETE|HEAD|OPTIONS|TRACE|CONNECT) .+ HTTP/\d\.\d')
 
@@ -34,10 +35,10 @@ class HTTPAnalyzer:
                 elif self.rule['type'] == 'http' and self.check_host(payload):
                     self.log_traffic(src_ip, dst_ip, payload , host , "host")
 
-    def is_http(self, payload: bytes) -> bool:
+    def is_http(self, payload):
         return bool(self.http_pattern.match(payload))
 
-    def check_host(self, payload: bytes) -> bool:
+    def check_host(self, payload):
         # check rule host with host header
         host_pattern = re.compile(rb'Host: (.+?)\r\n')
         match = host_pattern.search(payload)
@@ -47,14 +48,17 @@ class HTTPAnalyzer:
         return False
 
     def log_traffic(self, src_ip, dst_ip, payload , host , type_check):
-        print(f"HTTP traffic Matched by {type_check} / Source: {src_ip} / Destination: {dst_ip} / Host: {host} / Payload: [ {payload[:100]}  ] ...")
+        mess = f"HTTP traffic Matched by {type_check} / Source: {src_ip} / Destination: {dst_ip} / Host: {host} / Payload: [ {payload[:100]}  ] ..."
+        print(mess)
         print("--------------------")
+        send_to_telegram(mess)
 
-def load_yaml(file_path: str) -> Dict:
+
+def load_yaml(file_path):
     with open(file_path, 'r') as file:
         return yaml.safe_load(file)
 
-def capture_packets(rule: Dict, interface: str = "eth0"):
+def capture_packets(rule, interface = "eth0"):
     analyzer = HTTPAnalyzer(rule)
     print(f"Starting packet capture on interface {interface}...")
     sniff(iface=interface, prn=analyzer.analyze_packet, store=0)

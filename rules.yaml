@@ -1,5 +1,5 @@
 rules:
-#http
+http
 
   - name: match by IP
     action: check
@@ -62,3 +62,11 @@ rules:
     action: check
     type: geosite
     path: "./GeoSite.txt"
+
+    #GeoIP
+
+  - name: Geoip match
+    action: block #block or check
+    transport: all #tcp or udp
+    type: geoip
+    path: "./GeoIP.txt" 

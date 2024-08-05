@@ -4,10 +4,13 @@ from scapy.layers.tls.all import TLS
 from scapy.layers.tls.extensions import TLS_Ext_ServerName
 import yaml
 from typing import Dict
+from telegram import send_to_telegram
 
 def log_traffic(packet,sni, src_ip , dst_ip , src_port , dst_port , type_check):
-    print(f"TLS traffic Matched by {type_check} / SNI: {sni} /  {src_ip}:{src_port} > {dst_ip}:{dst_port}  / packet: {packet.summary()}  ] ...")
+    mess = f"TLS traffic Matched by {type_check} / SNI: {sni} /  {src_ip}:{src_port} > {dst_ip}:{dst_port}  / packet: {packet.summary()}  ] ..."
+    print(mess)
     print("--------------------")
+    send_to_telegram(mess)
 
 def load_yaml(file_path: str) -> Dict:
     with open(file_path, 'r') as file:
