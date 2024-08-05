@@ -3,8 +3,29 @@ from scapy.all  import IP , TCP
 from scapy.layers.tls.all import TLS
 from scapy.layers.tls.extensions import TLS_Ext_ServerName
 import yaml
-from typing import Dict
 from telegram import send_to_telegram
+import subprocess
+import signal
+
+def add_iptables_rule(ip, port):
+    if not port :
+        port = 443
+    #Block outbound
+    iptable_rule = f"-A OUTPUT -p tcp -d {ip} --dport {port} -j DROP"
+    iptable_rules.append(iptable_rule)
+    subprocess.run(["sudo", "iptables", *iptable_rule.split()])
+    #block inbound
+    iptable_rule = f"-A INPUT -p tcp -s {ip} --sport {port} -j DROP"
+    iptable_rules.append(iptable_rule)
+    subprocess.run(["sudo", "iptables", *iptable_rule.split()])
+    mess = f"BLOCKED: {ip}"
+    print(mess)
+    send_to_telegram(mess)
+
+def cleanup_iptables(rules):
+    for rule in rules:
+        rule = "-D" + rule[2:]
+        subprocess.run(["sudo", "iptables", *rule.split()])
 
 def log_traffic(packet,sni, src_ip , dst_ip , src_port , dst_port , type_check):
     mess = f"TLS traffic Matched by {type_check} / SNI: {sni} /  {src_ip}:{src_port} > {dst_ip}:{dst_port}  / packet: {packet.summary()}  ] ..."
@@ -12,7 +33,7 @@ def log_traffic(packet,sni, src_ip , dst_ip , src_port , dst_port , type_check):
     print("--------------------")
     send_to_telegram(mess)
 
-def load_yaml(file_path: str) -> Dict:
+def load_yaml(file_path):
     with open(file_path, 'r') as file:
         return yaml.safe_load(file)
 
@@ -28,15 +49,23 @@ def packet_callback(packet):
         src_ip = packet[IP].src
         src_port = packet[TCP].sport
         dst_port  = packet[TCP].dport
-
-        if rule['ip'] == "all" : #Just TLS detect
-            log_traffic(packet,sni, src_ip , dst_ip , src_port , dst_port , "all")
-        if rule['ip']==dst_ip and rule['sni'] == sni :
-            log_traffic(packet,sni, src_ip , dst_ip , src_port , dst_port ,"ip and sni")
-        elif rule['ip'] == dst_ip :
-            log_traffic(packet,sni, src_ip , dst_ip , src_port , dst_port ,"ip")
-        elif rule['sni'] == sni :
-            log_traffic(packet,sni, src_ip , dst_ip , src_port , dst_port ,"sni")
+        if rule['action'] == 'check' or rule['action'] == 'block' :
+            if rule['ip'] == "all" : #Just TLS detect
+                log_traffic(packet,sni, src_ip , dst_ip , src_port , dst_port , "nothing")
+                if rule['action'] == 'block' :
+                    add_iptables_rule(dst_ip, dst_port)
+            if rule['ip']==dst_ip and rule['sni'] == sni :
+                log_traffic(packet,sni, src_ip , dst_ip , src_port , dst_port ,"ip and sni")
+                if rule['action'] == 'block' :
+                    add_iptables_rule(dst_ip, dst_port)
+            elif rule['ip'] == dst_ip :
+                log_traffic(packet,sni, src_ip , dst_ip , src_port , dst_port ,"ip")
+                if rule['action'] == 'block' :
+                    add_iptables_rule(dst_ip, dst_port)
+            elif rule['sni'] == sni :
+                log_traffic(packet,sni, src_ip , dst_ip , src_port , dst_port ,"sni")
+                if rule['action'] == 'block' :
+                    add_iptables_rule(dst_ip, dst_port)
         
             #print("Packet details:")
             #packet.show()
@@ -58,6 +87,20 @@ filter_exp = f"tcp port {rule['port']}"  # Filter
 print(f"Filter : {filter_exp}")
 
 print(f"Starting packet capture on interface {interface}")
+
+iptable_rules = []
+def signal_handler(sig, frame):
+    cleanup_iptables(iptable_rules)
+    print("Cleaning up iptables rules...")
+    sys.exit(0)
+
+def signal_handler(sig, frame):
+    cleanup_iptables(iptable_rules)
+    print("Cleaning up iptables rules...")
+    sys.exit(0)
+
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
 
 if rule['port'] == "all" :
     sniff(iface=interface, prn=packet_callback , session=TCPSession)

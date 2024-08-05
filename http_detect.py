@@ -1,10 +1,30 @@
 import yaml
 from scapy.all import sniff, IP, TCP, Raw
 import re
-from typing import Dict
-from threading import Thread
 import sys
 from telegram import send_to_telegram
+import subprocess
+import signal
+
+def add_iptables_rule(ip, port):
+    if not port :
+        port = 80
+    #Block outbound
+    iptable_rule = f"-A OUTPUT -p tcp -d {ip} --dport {port} -j DROP"
+    iptable_rules.append(iptable_rule)
+    subprocess.run(["sudo", "iptables", *iptable_rule.split()])
+    #block inbound
+    iptable_rule = f"-A INPUT -p tcp -s {ip} --sport {port} -j DROP"
+    iptable_rules.append(iptable_rule)
+    subprocess.run(["sudo", "iptables", *iptable_rule.split()])
+    mess = f"BLOCKED: {ip}"
+    print(mess)
+    send_to_telegram(mess)
+
+def cleanup_iptables(rules):
+    for rule in rules:
+        rule = "-D" + rule[2:]
+        subprocess.run(["sudo", "iptables", *rule.split()])
 
 class HTTPAnalyzer:
     def __init__(self, rule):
@@ -28,12 +48,23 @@ class HTTPAnalyzer:
                 # match rules with http packet 
                 if match:
                     host = match.group(1).decode()
-                if self.rule['type'] == 'http' and (src_ip == self.rule['ip'] or dst_ip == self.rule['ip']) and self.check_host(payload):
-                    self.log_traffic(src_ip, dst_ip, payload , host , "ip and host")
-                elif self.rule['type'] == 'http' and (src_ip == self.rule['ip'] or dst_ip == self.rule['ip']):
-                    self.log_traffic(src_ip, dst_ip, payload , host , "ip")
-                elif self.rule['type'] == 'http' and self.check_host(payload):
-                    self.log_traffic(src_ip, dst_ip, payload , host , "host")
+                if rule['action'] == 'check' or rule['action'] == 'block' :
+                    if rule['ip'] == "all" : #Just http detect
+                        self.log_traffic(src_ip, dst_ip, payload , host , "nothing")
+                        if rule['action'] == 'block' :
+                            add_iptables_rule(dst_ip, dst_port)
+                    if self.rule['type'] == 'http' and (src_ip == self.rule['ip'] or dst_ip == self.rule['ip']) and self.check_host(payload):
+                        self.log_traffic(src_ip, dst_ip, payload , host , "ip and host")
+                        if rule['action'] == 'block' :
+                            add_iptables_rule(dst_ip, dst_port)
+                    elif self.rule['type'] == 'http' and (src_ip == self.rule['ip'] or dst_ip == self.rule['ip']):
+                        self.log_traffic(src_ip, dst_ip, payload , host , "ip")
+                        if rule['action'] == 'block' :
+                            add_iptables_rule(dst_ip, dst_port)
+                    elif self.rule['type'] == 'http' and self.check_host(payload):
+                        self.log_traffic(src_ip, dst_ip, payload , host , "host")
+                        if rule['action'] == 'block' :
+                            add_iptables_rule(dst_ip, dst_port)
 
     def is_http(self, payload):
         return bool(self.http_pattern.match(payload))
@@ -76,4 +107,19 @@ if __name__ == "__main__":
 
     configs = load_yaml('config.yaml')
     interface = configs['io']['interface']
+
+    iptable_rules = []
+    def signal_handler(sig, frame):
+        cleanup_iptables(iptable_rules)
+        print("Cleaning up iptables rules...")
+        sys.exit(0)
+
+    def signal_handler(sig, frame):
+        cleanup_iptables(iptable_rules)
+        print("Cleaning up iptables rules...")
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
     capture_packets(rule, interface)

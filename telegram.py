@@ -11,7 +11,10 @@ def send_to_telegram (mess) :
     config = load_yaml("config.yaml")
     token =  config['telegram']['token']
     chat_id = config['telegram']['chatid']
-    result  = requests.get("https://api.telegram.org/bot" + token + "/sendMessage" + "?chat_id=" + chat_id + "&text=" + mess)
-    content = result.content.decode('utf-8')
-    data_dict = json.loads(content)
-    print(f"telegram result: {data_dict['ok']}")
+    if not token == "None" :
+        result  = requests.get("https://api.telegram.org/bot" + token + "/sendMessage" + "?chat_id=" + chat_id + "&text=" + mess)
+        content = result.content.decode('utf-8')
+        data_dict = json.loads(content)
+        print(f"telegram result: {data_dict['ok']}")
+    else :
+        pass

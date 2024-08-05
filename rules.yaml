@@ -1,72 +1,77 @@
 rules:
-http
+#http
 
-  - name: match by IP
+  - name: just http detect
     action: check
     type: http
-    ip: "104.21.82.169"
+    ip: "all" # ip or all
     host: "None"
 
-  - name: match by host
-    action: check
+  - name: matched by ip
     type: http
-    ip: "None"
-    host: "wikm.ir"
+    ip: "185.128.136.186" # ip or all
+    host: "None"
 
-  - name: match by both ip and host
-    action: check
-    type: http
-    ip: "185.128.136.186"
-    host: "wikm.ir"
+#   - name: match by host
+#     action: check
+#     type: http
+#     ip: "None"
+#     host: "wikm.ir"
 
-#TLS
+  # - name: match by both ip and host
+  #   action: block
+  #   type: http
+  #   ip: "185.128.136.186"
+  #   host: "wikm.ir"
 
-  - name: match by ip port 443
-    action: check
-    type: tls
-    ip: "185.15.59.224"
-    sni: "None"
-    port: "443"
+# #TLS
 
-  - name: match by ip and all ports
-    action: check
-    type: tls
-    ip: "185.15.59.224"
-    sni: "None"
-    port: all
+#   - name: match by ip port 443
+#     action: check
+#     type: tls
+#     ip: "185.15.59.224"
+#     sni: "None"
+#     port: "443"
 
-  - name: match by sni and all ports
-    action: check
-    type: tls
-    ip: "None"
-    sni: "wikm.ir"
-    port: all
+#   - name: match by ip and all ports
+#     action: check
+#     type: tls
+#     ip: "185.15.59.224"
+#     sni: "None"
+#     port: all
 
-  - name: match by sni and ip
-    action: check
-    type: tls
-    ip: "185.15.59.224"
-    sni: "fa.wikipedia.org"
-    port: all
+#   - name: match by sni and all ports
+#     action: check
+#     type: tls
+#     ip: "None"
+#     sni: "wikm.ir"
+#     port: all
 
-  - name: match by sni
-    action: check
-    type: tls
-    ip: "185.128.136.186"
-    sni: "netplusshop.ir"
-    port: all
+#   - name: match by sni and ip
+#     action: check
+#     type: tls
+#     ip: "185.15.59.224"
+#     sni: "fa.wikipedia.org"
+#     port: all
 
-    #Geosite
+#   - name: match by sni
+#     action: check
+#     type: tls
+#     ip: "185.128.136.186"
+#     sni: "netplusshop.ir"
+#     port: all
 
-  - name: Geosite match
-    action: check
-    type: geosite
-    path: "./GeoSite.txt"
+#     #Geosite
 
-    #GeoIP
+  # - name: Geosite match
+  #   action: block
+  #   type: geosite
+  #   path: "./GeoSite.txt"
 
-  - name: Geoip match
-    action: block #block or check
-    transport: all #tcp or udp
-    type: geoip
-    path: "./GeoIP.txt" 
+#     #GeoIP
+
+#   - name: Geoip match
+#     action: block #block or check
+#     transport: all #tcp or udp
+#     type: geoip
+#     path: "./GeoIP.txt" 

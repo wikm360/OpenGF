@@ -2,5 +2,5 @@ io:
   interface: "wlx00117f3abe6a"
 
 telegram:
-  token: "###############################" #your bot token : get from https://t.me/BotFather
+  token: "None" #your bot token : get from https://t.me/BotFather , if you dont use it = None
   chatid: "#########" # your chat id : get from https://t.me/chatIDrobot

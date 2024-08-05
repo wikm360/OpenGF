@@ -1,4 +1,4 @@
-from scapy.all import sniff, IP , send , TCP , Raw
+from scapy.all import sniff, IP , TCP , Raw
 import yaml
 import sys
 from telegram import send_to_telegram

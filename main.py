@@ -40,7 +40,7 @@ def main():
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     print("Created By wikm with ❤️ ")
-    print("Version 1.4")
+    print("Version 1.5")
     print("Starting ... ")
     print("Press Ctrl+C to stop the capture")
 
