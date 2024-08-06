@@ -2,6 +2,7 @@ import signal
 import sys
 import subprocess
 import yaml
+import time
 
 processes = []
 
@@ -30,19 +31,21 @@ def terminate_processes():
 def signal_handler(sig, frame):
     print("Program is terminating, terminating subprocesses...")
     terminate_processes()
+    time.sleep(2)
     sys.exit(0)
+    time.sleep(2)
 
 def main():
     # set signal manegment for terminate procces
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     print("Created By wikm with ❤️ ")
-    print("Version 1.9")
+    print("Version 2.0")
     print("Starting ... ")
     print("Press Ctrl+C to stop the capture")
 
 
-    coretype = load_yaml('config.yaml')['core']['rule_type']
+    coretype = load_yaml('./settings/config.yaml')['core']['rule_type']
 
     if coretype == 'hierarchy':
         run_rule_detection('Hierarchy.py' , coretype)

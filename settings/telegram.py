@@ -8,7 +8,7 @@ def load_yaml(file_path: str) -> Dict:
         return yaml.safe_load(file)
 
 def send_to_telegram (mess) :
-    config = load_yaml("config.yaml")
+    config = load_yaml("./settings/config.yaml")
     token =  config['telegram']['token']
     chat_id = config['telegram']['chatid']
     if not token == "None" :

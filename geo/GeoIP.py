@@ -1,11 +1,14 @@
 from scapy.all import sniff, IP , TCP , Raw
 import yaml
 import sys
-from telegram import send_to_telegram
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from settings.telegram import send_to_telegram
 import ipaddress
 import subprocess
 import signal
 import json
+import time
 
 def add_iptables_rule(ip, port , transport , configs):
     if transport == "all" :
@@ -13,12 +16,12 @@ def add_iptables_rule(ip, port , transport , configs):
         iptable_rule = f"-A OUTPUT -d {ip} -j DROP"
         if configs['core']['rule_type'] == 'hierarchy':
             # read iptable rules json
-            with open('iptable.json', 'r') as file:
+            with open('./settings/iptable.json', 'r') as file:
                 iptable_rules_json = json.load(file)
             # add rule 
             iptable_rules_json.append(iptable_rule)
             # save rules to json
-            with open('iptable.json', 'w') as file:
+            with open('./settings/iptable.json', 'w') as file:
                 json.dump(iptable_rules_json, file)
         else :
             iptable_rules.append(iptable_rule)
@@ -29,12 +32,12 @@ def add_iptables_rule(ip, port , transport , configs):
         iptable_rule = f"-A INPUT -s {ip} -j DROP"
         if configs['core']['rule_type'] == 'hierarchy':
             # read iptable rules json
-            with open('iptable.json', 'r') as file:
+            with open('./settings/iptable.json', 'r') as file:
                 iptable_rules_json = json.load(file)
             # add rule 
             iptable_rules_json.append(iptable_rule)
             # save rules to json
-            with open('iptable.json', 'w') as file:
+            with open('./settings/iptable.json', 'w') as file:
                 json.dump(iptable_rules_json, file)
         else :
             iptable_rules.append(iptable_rule)
@@ -49,12 +52,12 @@ def add_iptables_rule(ip, port , transport , configs):
         iptable_rule = f"-A OUTPUT -p {transport} -d {ip} --dport {port} -j DROP"
         if configs['core']['rule_type'] == 'hierarchy':
             # read iptable rules json
-            with open('iptable.json', 'r') as file:
+            with open('./settings/iptable.json', 'r') as file:
                 iptable_rules_json = json.load(file)
             # add rule 
             iptable_rules_json.append(iptable_rule)
             # save rules to json
-            with open('iptable.json', 'w') as file:
+            with open('./settings/iptable.json', 'w') as file:
                 json.dump(iptable_rules_json, file)
         else :
             iptable_rules.append(iptable_rule)
@@ -130,7 +133,7 @@ if __name__ == "__main__":
         rule = yaml.safe_load(rule_yaml)
     except yaml.YAMLError:
         print("Failed to decode YAML.")
-    configs = load_yaml('config.yaml')
+    configs = load_yaml('./settings/config.yaml')
     path = configs['path']['geoip']
 
     ip_ranges = []
@@ -151,8 +154,10 @@ if __name__ == "__main__":
     iptable_rules = []
     def signal_handler(sig, frame):
         cleanup_iptables(iptable_rules)
-        print("Cleaning up iptables rules...")
+        sys.stdout.write("Cleaning up iptables rules...")
+        time.sleep(2)
         sys.exit(0)
+        time.sleep(2)
 
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)

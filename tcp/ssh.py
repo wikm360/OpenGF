@@ -1,11 +1,14 @@
 from scapy.all import sniff, TCP , IP
 import re
 import sys
-from telegram import send_to_telegram
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from settings.telegram import send_to_telegram
 import signal
 import yaml
 import subprocess
 import json
+import time
 
 def log_traffic(src_ip, src_port , dst_ip , dst_port , packet , type_check):
     mess = f"SSH Packet Matched by {type_check} / Source: {src_ip}:{src_port} / Destination: {dst_ip}:{dst_port} / / packet: [ {packet.summary()}  ] ..."
@@ -24,12 +27,12 @@ def add_iptables_rule(ip, port , configs):
     iptable_rule = f"-A OUTPUT -p tcp -d {ip} --dport {port} -j DROP"
     if configs['core']['rule_type'] == 'hierarchy':
         # read iptable rules json
-        with open('iptable.json', 'r') as file:
+        with open('./settings/iptable.json', 'r') as file:
             iptable_rules_json = json.load(file)
         # add rule 
         iptable_rules_json.append(iptable_rule)
         # save rules to json
-        with open('iptable.json', 'w') as file:
+        with open('./settings/iptable.json', 'w') as file:
             json.dump(iptable_rules_json, file)
     else :
         iptable_rules.append(iptable_rule)
@@ -40,12 +43,12 @@ def add_iptables_rule(ip, port , configs):
     iptable_rule = f"-A INPUT -p tcp -s {ip} --sport {port} -j DROP"
     if configs['core']['rule_type'] == 'hierarchy':
         # read iptable rules json
-        with open('iptable.json', 'r') as file:
+        with open('./settings/iptable.json', 'r') as file:
             iptable_rules_json = json.load(file)
         # add rule 
         iptable_rules_json.append(iptable_rule)
         # save rules to json
-        with open('iptable.json', 'w') as file:
+        with open('./settings/iptable.json', 'w') as file:
             json.dump(iptable_rules_json, file)
     else :
         iptable_rules.append(iptable_rule)
@@ -101,14 +104,16 @@ if __name__ == "__main__":
     except yaml.YAMLError:
         print("Failed to decode YAML.")
 
-    configs = load_yaml('config.yaml')
+    configs = load_yaml('./settings/config.yaml')
     interface = configs['io']['interface']
 
     iptable_rules = []
     def signal_handler(sig, frame):
         cleanup_iptables(iptable_rules)
-        print("Cleaning up iptables rules...")
+        sys.stdout.write("Cleaning up iptables rules...")
+        time.sleep(2)
         sys.exit(0)
+        time.sleep(2)
 
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)

@@ -1,16 +1,15 @@
 import yaml
 from scapy.all import sniff
-from telegram import send_to_telegram
+from settings.telegram import send_to_telegram
 import signal
-from http_detect import HTTPAnalyzer
-from TLS import analyzer_tls
+from tcp.http_detect import HTTPAnalyzer
+from tcp.TLS import analyzer_tls
 import os
-from signal_module import signal_handler , cleanup_iptables
-from GeoIP import handle_packet
+from settings.signal_module import signal_handler , cleanup_iptables
+from geo.GeoIP import handle_packet
 import ipaddress
-from GeoSite import analyze_goesite
-from ssh import analyze_ssh
-
+from geo.GeoSite import analyze_goesite
+from tcp.ssh import analyze_ssh
 def packet_callback (packet) :
     for rule in rules['rules']:
         type = rule['type']
@@ -36,9 +35,9 @@ def load_yaml(file_path):
         return yaml.safe_load(file)
 
 if __name__  == "__main__" :
-    configs = load_yaml('config.yaml')
+    configs = load_yaml('./settings/config.yaml')
     interface = configs['io']['interface']
-    rules = load_yaml('rules.yaml')
+    rules = load_yaml('./settings/rules.yaml')
 
     #geoip settings
     def list_ips(ip_range):

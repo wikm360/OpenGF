@@ -2,11 +2,13 @@ import yaml
 from scapy.all import sniff, IP, TCP, Raw
 import re
 import sys
-from telegram import send_to_telegram
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from settings.telegram import send_to_telegram
 import subprocess
 import signal
-import os
 import json
+import time
 
 def callback_packet  (packet):
     analyzer.analyze_packet(packet=packet , rule=rule , configs=configs)
@@ -19,12 +21,12 @@ def add_iptables_rule(ip, port , configs):
     iptable_rule = f"-A OUTPUT -p tcp -d {ip} --dport {port} -j DROP"
     if configs['core']['rule_type'] == 'hierarchy':
         # read iptable rules json
-        with open('iptable.json', 'r') as file:
+        with open('./settings/iptable.json', 'r') as file:
             iptable_rules_json = json.load(file)
         # add rule 
         iptable_rules_json.append(iptable_rule)
         # save rules to json
-        with open('iptable.json', 'w') as file:
+        with open('./settings/iptable.json', 'w') as file:
             json.dump(iptable_rules_json, file)
     else :
         iptable_rules.append(iptable_rule)
@@ -35,12 +37,12 @@ def add_iptables_rule(ip, port , configs):
     iptable_rule = f"-A INPUT -p tcp -s {ip} --sport {port} -j DROP"
     if configs['core']['rule_type'] == 'hierarchy':
         # read iptable rules json
-        with open('iptable.json', 'r') as file:
+        with open('./settings/iptable.json', 'r') as file:
             iptable_rules_json = json.load(file)
         # add rule 
         iptable_rules_json.append(iptable_rule)
         # save rules to json
-        with open('iptable.json', 'w') as file:
+        with open('./settings/iptable.json', 'w') as file:
             json.dump(iptable_rules_json, file)
     else :
         iptable_rules.append(iptable_rule)
@@ -52,7 +54,6 @@ def add_iptables_rule(ip, port , configs):
     send_to_telegram(mess)
 
 def cleanup_iptables(rules):
-    print(rules)
     for rule in rules:
         rule = "-D" + rule[2:]
         subprocess.run(["sudo", "iptables", *rule.split()])
@@ -131,15 +132,17 @@ if __name__ == "__main__":
     except yaml.YAMLError:
         print("Failed to decode YAML.")
 
-    configs = load_yaml('config.yaml')
+    configs = load_yaml('./settings/config.yaml')
     interface = configs['io']['interface']
 
     iptable_rules = []
 
     def signal_handler(sig, frame):
         cleanup_iptables(iptable_rules)
-        print("Cleaning up iptables rules...")
+        sys.stdout.write("Cleaning up iptables rules...")
+        time.sleep(2)
         sys.exit(0)
+        time.sleep(2)
 
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)

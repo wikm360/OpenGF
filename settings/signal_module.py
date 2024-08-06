@@ -1,6 +1,7 @@
 import sys
 import subprocess
 import json
+import time
 
 
 
@@ -12,7 +13,9 @@ def signal_handler(sig, frame):
     print(iptable_rules)
     cleanup_iptables(iptable_rules)
     print("Cleaning up iptables rules...")
+    time.sleep(2)
     sys.exit(0)
+    time.sleep(2)
     
 
 def cleanup_iptables(iptable_rules):

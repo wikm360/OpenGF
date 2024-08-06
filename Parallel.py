@@ -2,6 +2,7 @@ import yaml
 import subprocess
 import signal
 import sys
+import time
 
 # list for save child procceess
 processes = []
@@ -27,37 +28,39 @@ def terminate_processes():
             process.terminate()
         except Exception as e:
             print(f"Error terminating process: {e}")
-    print("All subprocesses terminated.")
+    sys.stdout.write("All subprocesses terminated.")
 
 def signal_handler(sig, frame):
     sys.stdout.write("Program is terminating, terminating subprocesses...")
     terminate_processes()
+    time.sleep(2)
     sys.exit(0)
+    time.sleep(2)
 
 def main():
     # set signal manegment for terminate procces
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
-    configs = load_yaml('config.yaml')
+    configs = load_yaml('./settings/config.yaml')
     interface = configs['io']['interface']
     print(f"Starting packet capture on interface {interface}...")
 
 
-    rules = load_yaml('rules.yaml')
+    rules = load_yaml('./settings/rules.yaml')
 
     # run each rule with seprate procces
     for rule in rules['rules']:
         if rule['type'] == 'http':
-            run_rule_detection('http_detect.py', rule)
+            run_rule_detection('./tcp/http_detect.py', rule)
         elif rule['type'] == 'tls':
-            run_rule_detection('TLS.py', rule)
+            run_rule_detection('./tcp/TLS.py', rule)
         elif rule['type'] == 'geosite' :
-            run_rule_detection('GeoSite.py', rule)
+            run_rule_detection('./geo/GeoSite.py', rule)
         elif rule['type'] == 'geoip' :
-            run_rule_detection('GeoIP.py', rule)
+            run_rule_detection('./geo/GeoIP.py', rule)
         elif rule['type'] == 'ssh'  :
-            run_rule_detection('ssh.py' , rule)
+            run_rule_detection('./tcp/ssh.py' , rule)
         else:
             print(f"Unknown rule type: {rule['type']}")
 

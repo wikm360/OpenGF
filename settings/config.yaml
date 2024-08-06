@@ -1,5 +1,5 @@
 io:
-  interface: "enp4s0" #wlx00117f3abe6a  , enp4s0 , all
+  interface: "enp4s0" #interface or all
 
 telegram:
   token: "None" #your bot token : get from https://t.me/BotFather , if you dont use it = None
@@ -7,5 +7,5 @@ telegram:
 core:
   rule_type: "parallel" # hierarchy or parallel
 path:
-  geoip: "./GeoIP.txt"
-  geosite: "./GeoSite.txt"
+  geoip: "./geo/GeoIP.txt"
+  geosite: "./geo/GeoSite.txt"

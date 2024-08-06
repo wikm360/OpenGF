@@ -2,10 +2,13 @@ from scapy.all import sniff, DNS, DNSQR, DNSRR, IP , TCP
 import yaml
 import sys
 from typing import Dict
-from telegram import send_to_telegram
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from settings.telegram import send_to_telegram
 import signal
 import subprocess
 import json
+import time
 
 def add_iptables_rule(ip, port , configs):
     if port == "None" :
@@ -13,12 +16,12 @@ def add_iptables_rule(ip, port , configs):
         iptable_rule = f"-A OUTPUT -d {ip} -j DROP"
         if configs['core']['rule_type'] == 'hierarchy':
             # read iptable rules json
-            with open('iptable.json', 'r') as file:
+            with open('./settings/iptable.json', 'r') as file:
                 iptable_rules_json = json.load(file)
             # add rule 
             iptable_rules_json.append(iptable_rule)
             # save rules to json
-            with open('iptable.json', 'w') as file:
+            with open('./settings/iptable.json', 'w') as file:
                 json.dump(iptable_rules_json, file)
         else :
             iptable_rules.append(iptable_rule)
@@ -29,12 +32,12 @@ def add_iptables_rule(ip, port , configs):
         iptable_rule = f"-A INPUT -s {ip} -j DROP"
         if configs['core']['rule_type'] == 'hierarchy':
             # read iptable rules json
-            with open('iptable.json', 'r') as file:
+            with open('./settings/iptable.json', 'r') as file:
                 iptable_rules_json = json.load(file)
             # add rule 
             iptable_rules_json.append(iptable_rule)
             # save rules to json
-            with open('iptable.json', 'w') as file:
+            with open('./settings/iptable.json', 'w') as file:
                 json.dump(iptable_rules_json, file)
         else :
             iptable_rules.append(iptable_rule)
@@ -49,12 +52,12 @@ def add_iptables_rule(ip, port , configs):
         iptable_rule = f"-A OUTPUT -p tcp -d {ip} --dport {port} -j DROP"
         if configs['core']['rule_type'] == 'hierarchy':
             # read iptable rules json
-            with open('iptable.json', 'r') as file:
+            with open('./settings/iptable.json', 'r') as file:
                 iptable_rules_json = json.load(file)
             # add rule 
             iptable_rules_json.append(iptable_rule)
             # save rules to json
-            with open('iptable.json', 'w') as file:
+            with open('./settings/iptable.json', 'w') as file:
                 json.dump(iptable_rules_json, file)
         else :
             iptable_rules.append(iptable_rule)
@@ -65,12 +68,12 @@ def add_iptables_rule(ip, port , configs):
         iptable_rule = f"-A INPUT -p tcp -s {ip} --sport {port} -j DROP"
         if configs['core']['rule_type'] == 'hierarchy':
             # read iptable rules json
-            with open('iptable.json', 'r') as file:
+            with open('./settings/iptable.json', 'r') as file:
                 iptable_rules_json = json.load(file)
             # add rule 
             iptable_rules_json.append(iptable_rule)
             # save rules to json
-            with open('iptable.json', 'w') as file:
+            with open('./settings/iptable.json', 'w') as file:
                 json.dump(iptable_rules_json, file)
         else :
             iptable_rules.append(iptable_rule)
@@ -145,7 +148,7 @@ if __name__ == "__main__":
     except yaml.YAMLError:
         print("Failed to decode YAML.")
     
-    configs = load_yaml('config.yaml')
+    configs = load_yaml('./settings/config.yaml')
     path = configs['path']['geosite']
 
     domains = {}
@@ -160,13 +163,10 @@ if __name__ == "__main__":
     iptable_rules = []
     def signal_handler(sig, frame):
         cleanup_iptables(iptable_rules)
-        print("Cleaning up iptables rules...")
+        sys.stdout.write("Cleaning up iptables rules...")
+        time.sleep(2)
         sys.exit(0)
-
-    def signal_handler(sig, frame):
-        cleanup_iptables(iptable_rules)
-        print("Cleaning up iptables rules...")
-        sys.exit(0)
+        time.sleep(2)
 
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
