@@ -47,10 +47,10 @@ First change config.yaml variable with your own .
   nano config.yaml
 ```
 
-NOTIC : check type = just detect and report it to cli and telegram.
+🔴NOTIC : check type = just detect and report it to cli and telegram.
 
 
-NOTIC : block type = detect and block and report it to cli and telegram.
+🔴NOTIC : block type = detect , block and report it to cli and telegram.
 
 
 
@@ -62,35 +62,38 @@ Rules Examples : change rules.yaml file :
 ```
 Rules Example 
 
-http :
+HTTP :
 
 ```yaml
+
   - name: just http detect
-    action: "check" # check or block
+    action: "check" #ckeck or block
     type: http
     ip: "all" # ip or all
     host: "None" #host header or None
 
-  - name: matched by ip and block
-    action: block
+  - name: matched by ip
+    action: "check"
     type: http
-    ip: "185.128.136.186"
+    ip: "185.128.136.186" # ip or all
     host: "None"
 
   - name: match by host
-    action: check
+    action: "check"
     type: http
     ip: "None"
     host: "wikm.ir"
 
   - name: match by both ip and host
-    action: block
+    action: "block"
     type: http
     ip: "185.128.136.186"
     host: "wikm.ir"
 ```
-TLS :
+TLS
+
 ```yaml
+
   - name: match by ip port 443
     action: "check" #check or block
     type: tls
@@ -106,14 +109,14 @@ TLS :
     port: all
 
   - name: match by sni and all ports
-    action: check
+    action: "block"
     type: tls
     ip: "None"
     sni: "wikm.ir"
     port: all
 
-  - name: match by sni and ip and block
-    action: block
+  - name: match by sni and ip
+    action: "block"
     type: tls
     ip: "185.15.59.224"
     sni: "fa.wikipedia.org"
@@ -130,18 +133,29 @@ TLS :
 Geosite
 
 ```yaml
+
   - name: Geosite match
-    action: "block" #check or block
+    action: block
     type: geosite
-    path: "./GeoSite.txt" #path of your geosite file
 
 ```
 GeoIP
 
 ```yaml
+
   - name: Geoip match
     action: "block" #block or check
-    transport: "all" #tcp or udp or all
+    transport: all #tcp or udp
     type: geoip
-    path: "./GeoIP.txt" #path of your geoip file
+
+```
+
+SSH
+
+```yaml
+  - name: ssh block
+    type: ssh
+    action: "block"
+    ip: "all" #port or all
+
 ```
