@@ -5,23 +5,54 @@ import sys
 from telegram import send_to_telegram
 import subprocess
 import signal
+import os
+import json
 
-def add_iptables_rule(ip, port):
+def callback_packet  (packet):
+    analyzer.analyze_packet(packet=packet , rule=rule , configs=configs)
+
+def add_iptables_rule(ip, port , configs):
     if not port :
         port = 80
+    
     #Block outbound
     iptable_rule = f"-A OUTPUT -p tcp -d {ip} --dport {port} -j DROP"
-    iptable_rules.append(iptable_rule)
+    if configs['core']['rule_type'] == 'hierarchy':
+        # read iptable rules json
+        with open('iptable.json', 'r') as file:
+            iptable_rules_json = json.load(file)
+        # add rule 
+        iptable_rules_json.append(iptable_rule)
+        # save rules to json
+        with open('iptable.json', 'w') as file:
+            json.dump(iptable_rules_json, file)
+    else :
+        iptable_rules.append(iptable_rule)
+    #run block outblound:
     subprocess.run(["sudo", "iptables", *iptable_rule.split()])
+
     #block inbound
     iptable_rule = f"-A INPUT -p tcp -s {ip} --sport {port} -j DROP"
-    iptable_rules.append(iptable_rule)
+    if configs['core']['rule_type'] == 'hierarchy':
+        # read iptable rules json
+        with open('iptable.json', 'r') as file:
+            iptable_rules_json = json.load(file)
+        # add rule 
+        iptable_rules_json.append(iptable_rule)
+        # save rules to json
+        with open('iptable.json', 'w') as file:
+            json.dump(iptable_rules_json, file)
+    else :
+        iptable_rules.append(iptable_rule)
+    #run block inbound
     subprocess.run(["sudo", "iptables", *iptable_rule.split()])
+    
     mess = f"BLOCKED: {ip}"
     print(mess)
     send_to_telegram(mess)
 
 def cleanup_iptables(rules):
+    print(rules)
     for rule in rules:
         rule = "-D" + rule[2:]
         subprocess.run(["sudo", "iptables", *rule.split()])
@@ -31,7 +62,7 @@ class HTTPAnalyzer:
         self.rule = rule
         self.http_pattern = re.compile(rb'^(GET|POST|PUT|DELETE|HEAD|OPTIONS|TRACE|CONNECT) .+ HTTP/\d\.\d')
 
-    def analyze_packet(self, packet):
+    def analyze_packet(self, packet , rule , configs):
         if IP in packet and TCP in packet and Raw in packet:
             src_port = packet[TCP].sport
             dst_port  = packet[TCP].dport
@@ -52,19 +83,19 @@ class HTTPAnalyzer:
                     if rule['ip'] == "all" : #Just http detect
                         self.log_traffic(src_ip, dst_ip, payload , host , "nothing")
                         if rule['action'] == 'block' :
-                            add_iptables_rule(dst_ip, dst_port)
+                            add_iptables_rule(dst_ip, dst_port , configs)
                     if self.rule['type'] == 'http' and (src_ip == self.rule['ip'] or dst_ip == self.rule['ip']) and self.check_host(payload):
                         self.log_traffic(src_ip, dst_ip, payload , host , "ip and host")
                         if rule['action'] == 'block' :
-                            add_iptables_rule(dst_ip, dst_port)
+                            add_iptables_rule(dst_ip, dst_port, configs)
                     elif self.rule['type'] == 'http' and (src_ip == self.rule['ip'] or dst_ip == self.rule['ip']):
                         self.log_traffic(src_ip, dst_ip, payload , host , "ip")
                         if rule['action'] == 'block' :
-                            add_iptables_rule(dst_ip, dst_port)
+                            add_iptables_rule(dst_ip, dst_port, configs)
                     elif self.rule['type'] == 'http' and self.check_host(payload):
                         self.log_traffic(src_ip, dst_ip, payload , host , "host")
                         if rule['action'] == 'block' :
-                            add_iptables_rule(dst_ip, dst_port)
+                            add_iptables_rule(dst_ip, dst_port, configs)
 
     def is_http(self, payload):
         return bool(self.http_pattern.match(payload))
@@ -89,11 +120,6 @@ def load_yaml(file_path):
     with open(file_path, 'r') as file:
         return yaml.safe_load(file)
 
-def capture_packets(rule, interface = "eth0"):
-    analyzer = HTTPAnalyzer(rule)
-    print(f"Starting packet capture on interface {interface}...")
-    sniff(iface=interface, prn=analyzer.analyze_packet, store=0)
-
 if __name__ == "__main__":
     # get argomans from cli
     if len(sys.argv) < 2:
@@ -109,10 +135,6 @@ if __name__ == "__main__":
     interface = configs['io']['interface']
 
     iptable_rules = []
-    def signal_handler(sig, frame):
-        cleanup_iptables(iptable_rules)
-        print("Cleaning up iptables rules...")
-        sys.exit(0)
 
     def signal_handler(sig, frame):
         cleanup_iptables(iptable_rules)
@@ -122,4 +144,10 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
-    capture_packets(rule, interface)
+    analyzer = HTTPAnalyzer(rule)
+
+    if interface == "all" :
+        sniff(prn=callback_packet, store=0)
+    else :
+        sniff(iface=interface , prn=callback_packet, store=0)
+        pass

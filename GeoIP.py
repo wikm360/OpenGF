@@ -5,29 +5,78 @@ from telegram import send_to_telegram
 import ipaddress
 import subprocess
 import signal
+import json
 
-def add_iptables_rule(ip, port):
+def add_iptables_rule(ip, port , transport , configs):
     if transport == "all" :
         #Block outbound
         iptable_rule = f"-A OUTPUT -d {ip} -j DROP"
-        iptable_rules.append(iptable_rule)
+        if configs['core']['rule_type'] == 'hierarchy':
+            # read iptable rules json
+            with open('iptable.json', 'r') as file:
+                iptable_rules_json = json.load(file)
+            # add rule 
+            iptable_rules_json.append(iptable_rule)
+            # save rules to json
+            with open('iptable.json', 'w') as file:
+                json.dump(iptable_rules_json, file)
+        else :
+            iptable_rules.append(iptable_rule)
+        #run block outblound:
         subprocess.run(["sudo", "iptables", *iptable_rule.split()])
+
         #block inbound
         iptable_rule = f"-A INPUT -s {ip} -j DROP"
-        iptable_rules.append(iptable_rule)
+        if configs['core']['rule_type'] == 'hierarchy':
+            # read iptable rules json
+            with open('iptable.json', 'r') as file:
+                iptable_rules_json = json.load(file)
+            # add rule 
+            iptable_rules_json.append(iptable_rule)
+            # save rules to json
+            with open('iptable.json', 'w') as file:
+                json.dump(iptable_rules_json, file)
+        else :
+            iptable_rules.append(iptable_rule)
+        #run block inbound
         subprocess.run(["sudo", "iptables", *iptable_rule.split()])
+        
         mess = f"BLOCKED: {ip}"
         print(mess)
         send_to_telegram(mess)
     else :
         #Block outbound
         iptable_rule = f"-A OUTPUT -p {transport} -d {ip} --dport {port} -j DROP"
-        iptable_rules.append(iptable_rule)
+        if configs['core']['rule_type'] == 'hierarchy':
+            # read iptable rules json
+            with open('iptable.json', 'r') as file:
+                iptable_rules_json = json.load(file)
+            # add rule 
+            iptable_rules_json.append(iptable_rule)
+            # save rules to json
+            with open('iptable.json', 'w') as file:
+                json.dump(iptable_rules_json, file)
+        else :
+            iptable_rules.append(iptable_rule)
+        #run block outblound:
         subprocess.run(["sudo", "iptables", *iptable_rule.split()])
+
         #block inbound
         iptable_rule = f"-A INPUT -p {transport} -s {ip} --sport {port} -j DROP"
-        iptable_rules.append(iptable_rule)
+        if configs['core']['rule_type'] == 'hierarchy':
+            # read iptable rules json
+            with open('iptable.json', 'r') as file:
+                iptable_rules_json = json.load(file)
+            # add rule 
+            iptable_rules_json.append(iptable_rule)
+            # save rules to json
+            with open('iptable.json', 'w') as file:
+                json.dump(iptable_rules_json, file)
+        else :
+            iptable_rules.append(iptable_rule)
+        #run block inbound
         subprocess.run(["sudo", "iptables", *iptable_rule.split()])
+        
         mess = f"BLOCKED: {ip}"
         print(mess)
         send_to_telegram(mess)
@@ -48,7 +97,7 @@ def load_yaml(file_path):
     with open(file_path, 'r') as file:
         return yaml.safe_load(file)
 
-def handle_packet(packet):
+def handle_packet(packet , rule , configs , ips , transport):
     #print(type(packet[IP.dst]))
     if packet.haslayer(IP):
         target = packet[IP].dst
@@ -64,10 +113,13 @@ def handle_packet(packet):
                 if rule['action'] == "block" :
                     if packet.haslayer(IP) and packet.haslayer(TCP):
                         if Raw in packet:
-                            add_iptables_rule(packet[IP].dst, packet[TCP].dport)
+                            add_iptables_rule(packet[IP].dst, packet[TCP].dport , transport , configs)
+                    else :
+                        transport = "all"
+                        add_iptables_rule(packet[IP].dst, "None" , transport , configs) 
 
-def packet_callback(packet):
-    handle_packet(packet)
+def geoip_packet_callback(packet):
+    handle_packet(packet  , rule , configs , ips , transport)
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
@@ -78,8 +130,8 @@ if __name__ == "__main__":
         rule = yaml.safe_load(rule_yaml)
     except yaml.YAMLError:
         print("Failed to decode YAML.")
-    path = rule['path']
     configs = load_yaml('config.yaml')
+    path = configs['path']['geoip']
 
     ip_ranges = []
     ips = set()
@@ -105,4 +157,4 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
-    sniff(filter="ip", prn=packet_callback)
+    sniff(filter="ip", prn=geoip_packet_callback)

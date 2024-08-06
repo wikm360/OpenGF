@@ -1,24 +1,21 @@
-import yaml
-import subprocess
 import signal
 import sys
-from typing import Dict
+import subprocess
+import yaml
 
-# list for save child procceess
 processes = []
 
-def load_rules(file_path):
+def load_yaml(file_path):
     with open(file_path, 'r') as file:
         return yaml.safe_load(file)
 
-def run_rule_detection(script_name, rule):
+def run_rule_detection(script_name , coretype):
     try:
-        print(f"Executing {script_name} for rule: {rule['name']}...")
+        print(f"Run as {coretype} Rule ...")
 
-        rule_yaml = yaml.dump(rule)
-        # create child process and save it  for terminate
-        process = subprocess.Popen(['python3', script_name, rule_yaml])
+        process = subprocess.Popen(['python3', script_name])
         processes.append(process)
+
     except Exception as e:
         print(f"Error executing script {script_name}: {e}")
 
@@ -40,25 +37,19 @@ def main():
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     print("Created By wikm with ❤️ ")
-    print("Version 1.5")
+    print("Version 1.9")
     print("Starting ... ")
     print("Press Ctrl+C to stop the capture")
 
 
-    rules = load_rules('rules.yaml')
+    coretype = load_yaml('config.yaml')['core']['rule_type']
 
-    # run each rule with seprate procces
-    for rule in rules['rules']:
-        if rule['type'] == 'http':
-            run_rule_detection('http_detect.py', rule)
-        elif rule['type'] == 'tls':
-            run_rule_detection('TLS.py', rule)
-        elif rule['type'] == 'geosite' :
-            run_rule_detection('GeoSite.py', rule)
-        elif rule['type'] == 'geoip' :
-            run_rule_detection('GeoIP.py', rule)
-        else:
-            print(f"Unknown rule type: {rule['type']}")
+    if coretype == 'hierarchy':
+        run_rule_detection('Hierarchy.py' , coretype)
+    elif coretype == 'parallel':
+        run_rule_detection('Parallel.py' , coretype)
+    else:
+        print(f"Unknown core rule_type")
 
     # wait for end all child
     for process in processes:

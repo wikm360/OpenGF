@@ -12,66 +12,69 @@ rules:
     ip: "185.128.136.186" # ip or all
     host: "None"
 
-#   - name: match by host
-#     action: check
-#     type: http
-#     ip: "None"
-#     host: "wikm.ir"
+  - name: match by host
+    action: "check"
+    type: http
+    ip: "None"
+    host: "wikm.ir"
 
-  # - name: match by both ip and host
-  #   action: block
-  #   type: http
-  #   ip: "185.128.136.186"
-  #   host: "wikm.ir"
+  - name: match by both ip and host
+    action: "block"
+    type: http
+    ip: "185.128.136.186"
+    host: "wikm.ir"
 
-# #TLS
+#TLS
 
-#   - name: match by ip port 443
-#     action: check
-#     type: tls
-#     ip: "185.15.59.224"
-#     sni: "None"
-#     port: "443"
+  - name: match by ip port 443
+    action: check
+    type: tls
+    ip: "185.15.59.224"
+    sni: "None"
+    port: "443"
 
-#   - name: match by ip and all ports
-#     action: check
-#     type: tls
-#     ip: "185.15.59.224"
-#     sni: "None"
-#     port: all
+  - name: match by ip and all ports
+    action: check
+    type: tls
+    ip: "185.15.59.224"
+    sni: "None"
+    port: all
 
-#   - name: match by sni and all ports
-#     action: check
-#     type: tls
-#     ip: "None"
-#     sni: "wikm.ir"
-#     port: all
+  - name: match by sni and all ports
+    action: "block"
+    type: tls
+    ip: "None"
+    sni: "wikm.ir"
+    port: all
 
-#   - name: match by sni and ip
-#     action: check
-#     type: tls
-#     ip: "185.15.59.224"
-#     sni: "fa.wikipedia.org"
-#     port: all
+  - name: match by sni and ip
+    action: "block"
+    type: tls
+    ip: "185.15.59.224"
+    sni: "fa.wikipedia.org"
+    port: all
 
-#   - name: match by sni
-#     action: check
-#     type: tls
-#     ip: "185.128.136.186"
-#     sni: "netplusshop.ir"
-#     port: all
+  - name: match by sni
+    action: check
+    type: tls
+    ip: "185.128.136.186"
+    sni: "netplusshop.ir"
+    port: all
 
-#     #Geosite
+    #Geosite
 
-  # - name: Geosite match
-  #   action: block
-  #   type: geosite
-  #   path: "./GeoSite.txt"
+  - name: Geosite match
+    action: block
+    type: geosite
 
-#     #GeoIP
+    #GeoIP
 
-#   - name: Geoip match
-#     action: block #block or check
-#     transport: all #tcp or udp
-#     type: geoip
-#     path: "./GeoIP.txt" 
+  - name: Geoip match
+    action: "block" #block or check
+    transport: all #tcp or udp
+    type: geoip
+
+  - name: ssh block
+    type: ssh
+    action: "block"
+    ip: "all"

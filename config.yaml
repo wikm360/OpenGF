@@ -1,6 +1,11 @@
 io:
-  interface: "wlx00117f3abe6a"
+  interface: "enp4s0" #wlx00117f3abe6a  , enp4s0 , all
 
 telegram:
   token: "None" #your bot token : get from https://t.me/BotFather , if you dont use it = None
   chatid: "#########" # your chat id : get from https://t.me/chatIDrobot
+core:
+  rule_type: "parallel" # hierarchy or parallel
+path:
+  geoip: "./GeoIP.txt"
+  geosite: "./GeoSite.txt"

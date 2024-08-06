@@ -6,18 +6,43 @@ import yaml
 from telegram import send_to_telegram
 import subprocess
 import signal
+import json
 
-def add_iptables_rule(ip, port):
+def add_iptables_rule(ip, port ,configs):
     if not port :
         port = 443
     #Block outbound
     iptable_rule = f"-A OUTPUT -p tcp -d {ip} --dport {port} -j DROP"
-    iptable_rules.append(iptable_rule)
+    if configs['core']['rule_type'] == 'hierarchy':
+        # read iptable rules json
+        with open('iptable.json', 'r') as file:
+            iptable_rules_json = json.load(file)
+        # add rule 
+        iptable_rules_json.append(iptable_rule)
+        # save rules to json
+        with open('iptable.json', 'w') as file:
+            json.dump(iptable_rules_json, file)
+    else :
+        iptable_rules.append(iptable_rule)
+    #run block outblound:
     subprocess.run(["sudo", "iptables", *iptable_rule.split()])
+
     #block inbound
     iptable_rule = f"-A INPUT -p tcp -s {ip} --sport {port} -j DROP"
-    iptable_rules.append(iptable_rule)
+    if configs['core']['rule_type'] == 'hierarchy':
+        # read iptable rules json
+        with open('iptable.json', 'r') as file:
+            iptable_rules_json = json.load(file)
+        # add rule 
+        iptable_rules_json.append(iptable_rule)
+        # save rules to json
+        with open('iptable.json', 'w') as file:
+            json.dump(iptable_rules_json, file)
+    else :
+        iptable_rules.append(iptable_rule)
+    #run block inbound
     subprocess.run(["sudo", "iptables", *iptable_rule.split()])
+    
     mess = f"BLOCKED: {ip}"
     print(mess)
     send_to_telegram(mess)
@@ -37,8 +62,11 @@ def load_yaml(file_path):
     with open(file_path, 'r') as file:
         return yaml.safe_load(file)
 
+def packet_callback (packet) :
+    analyzer_tls(packet=packet  , rule=rule , configs=configs)
+
 #tls_client_hello_pattern = re.compile(rb'\x16\x03[\x00-\x03][\x00-\xff]{2}\x01\x00')
-def packet_callback(packet):
+def analyzer_tls(packet , rule , configs):
     if packet.haslayer(TLS):
         sni = ""
         if packet.haslayer(TLS_Ext_ServerName):
@@ -53,59 +81,56 @@ def packet_callback(packet):
             if rule['ip'] == "all" : #Just TLS detect
                 log_traffic(packet,sni, src_ip , dst_ip , src_port , dst_port , "nothing")
                 if rule['action'] == 'block' :
-                    add_iptables_rule(dst_ip, dst_port)
+                    add_iptables_rule(dst_ip, dst_port , configs)
             if rule['ip']==dst_ip and rule['sni'] == sni :
                 log_traffic(packet,sni, src_ip , dst_ip , src_port , dst_port ,"ip and sni")
                 if rule['action'] == 'block' :
-                    add_iptables_rule(dst_ip, dst_port)
+                    add_iptables_rule(dst_ip, dst_port, configs)
             elif rule['ip'] == dst_ip :
                 log_traffic(packet,sni, src_ip , dst_ip , src_port , dst_port ,"ip")
                 if rule['action'] == 'block' :
-                    add_iptables_rule(dst_ip, dst_port)
+                    add_iptables_rule(dst_ip, dst_port, configs)
             elif rule['sni'] == sni :
                 log_traffic(packet,sni, src_ip , dst_ip , src_port , dst_port ,"sni")
                 if rule['action'] == 'block' :
-                    add_iptables_rule(dst_ip, dst_port)
+                    add_iptables_rule(dst_ip, dst_port, configs)
         
             #print("Packet details:")
             #packet.show()
 
-# Set up the packet capture
-if len(sys.argv) < 2:
-    print("No rule data provided.")
-rule_yaml = sys.argv[1]
+if __name__ == "__main__"  :
+    # Set up the packet capture
+    if len(sys.argv) < 2:
+        print("No rule data provided.")
+    rule_yaml = sys.argv[1]
 
-try:
-    rule = yaml.safe_load(rule_yaml)
-except yaml.YAMLError:
-    print("Failed to decode YAML.")
+    try:
+        rule = yaml.safe_load(rule_yaml)
+    except yaml.YAMLError:
+        print("Failed to decode YAML.")
 
-configs = load_yaml('config.yaml')
-interface = configs['io']['interface']
-filter_exp = f"tcp port {rule['port']}"  # Filter 
+    configs = load_yaml('config.yaml')
+    interface = configs['io']['interface']
+    filter_exp = f"tcp port {rule['port']}"  # Filter 
 
-print(f"Filter : {filter_exp}")
+    print(f"Filter : {filter_exp}")
 
-print(f"Starting packet capture on interface {interface}")
+    print(f"Starting packet capture on interface {interface}")
 
-iptable_rules = []
-def signal_handler(sig, frame):
-    cleanup_iptables(iptable_rules)
-    print("Cleaning up iptables rules...")
-    sys.exit(0)
+    iptable_rules = []
 
-def signal_handler(sig, frame):
-    cleanup_iptables(iptable_rules)
-    print("Cleaning up iptables rules...")
-    sys.exit(0)
+    def signal_handler(sig, frame):
+        cleanup_iptables(iptable_rules)
+        print("Cleaning up iptables rules...")
+        sys.exit(0)
 
-signal.signal(signal.SIGINT, signal_handler)
-signal.signal(signal.SIGTERM, signal_handler)
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
 
-if rule['port'] == "all" :
-    sniff(iface=interface, prn=packet_callback , session=TCPSession)
-elif rule['port'] == "https" :
-    sniff(iface=interface, filter="tcp port 443", prn=packet_callback , session=TCPSession)
-else :
-    sniff(iface=interface, filter=filter_exp, prn=packet_callback , session=TCPSession)
+    if rule['port'] == "all" :
+        sniff(iface=interface, prn=packet_callback , session=TCPSession)
+    elif rule['port'] == "https" :
+        sniff(iface=interface, filter="tcp port 443", prn=packet_callback , session=TCPSession)
+    else :
+        sniff(iface=interface, filter=filter_exp, prn=packet_callback , session=TCPSession)
 
