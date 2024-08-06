@@ -15,6 +15,8 @@ Before installing the required libraries, you must first install Python and pip 
   pip install signal
   pip install sys
   pip install ipaddress
+  pip install os
+  pip install json
 
 ```
 Iptable :
@@ -169,6 +171,7 @@ GeoIP
 
 ```
 
+
 SSH
 
 ```yaml
@@ -176,5 +179,28 @@ SSH
     type: ssh
     action: "block"
     ip: "all" #port or all
+
+```
+
+
+
+Example of GeoIP.txt :
+
+```bash
+
+1.1.1.1/32
+185.128.136.0/24
+
+```
+
+
+Example of GeoSite.txt :
+
+```bash
+
+wikm.ir
+soft98.ir
+didi.ir
+downloadha.com
 
 ```
