@@ -47,6 +47,25 @@ First change config.yaml variable with your own .
   nano config.yaml
 ```
 
+Eample of config.yaml :
+
+```yaml
+io:
+  interface: "enp4s0" #interface or all
+
+telegram:
+  token: "None" #your bot token : get from https://t.me/BotFather , if you dont use it = None
+  chatid: "#########" # your chat id : get from https://t.me/chatIDrobot
+core:
+  rule_type: "parallel" # hierarchy or parallel
+path:
+  geoip: "./geo/GeoIP.txt"
+  geosite: "./geo/GeoSite.txt"
+
+```
+
+
+
 🔴NOTIC : check type = just detect and report it to cli and telegram.
 
 
