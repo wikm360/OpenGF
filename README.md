@@ -3,24 +3,29 @@
 
 OpenGF is a flexible, easy-to-use, open source implementation of GF (Great Firewall) on Linux . based python
 
-features:
+Created by wikm  with ❤️
 
-1)detect and block http traffic (based on http header or ip)
 
-2)detect and block tla traffic (based on sni or ip)
 
-3)detect and block ssh traffic (based on ip ans port)
+## features:
 
-4)detect and block traffic based Geoip
+1) detect and block http traffic (based on http header or ip)
 
-5)detect and block traffic based on geosite
+2) detect and block tla traffic (based on sni or ip)
 
-6)Easy to write rules 
+3) detect and block ssh traffic (based on ip ans port)
 
-7)send reports on telegram
+4) detect and block traffic based Geoip
 
-8)Reading rules in both hierarchical and parallel ways 
+5) detect and block traffic based on geosite
 
+6) Easy to write rules 
+
+7) send reports on telegram
+
+8) Reading rules in both hierarchical and parallel ways 
+
+More features coming soon 🔜
 
 
 ## Prerequisites
