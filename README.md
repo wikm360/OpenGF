@@ -1,7 +1,7 @@
 
 # OpenGF
 
-OpenGF is a flexible, easy-to-use, open source implementation of GF (Great Firewall) on Linux . based python
+OpenGF is a flexible, easy-to-use, open source implementation of GF (Great Firewall) on Linux . written in python
 
 Created by wikm  with ❤️
 
@@ -11,7 +11,7 @@ Created by wikm  with ❤️
 
 1) detect and block http traffic (based on http header or ip)
 
-2) detect and block tla traffic (based on sni or ip)
+2) detect and block tls traffic (based on sni or ip)
 
 3) detect and block ssh traffic (based on ip ans port)
 
